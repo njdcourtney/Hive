@@ -39,6 +39,24 @@ func hiveAuth(hiveconfig *Hive) error {
 
 }
 
+// Map out the JSON structure
+type HiveJsonStructure struct {
+	Nodes []struct {
+		Id         string `json:"id"`
+		Name       string `json:"name"`
+		Attributes struct {
+			Temperature struct {
+				ReportedValue float32 `json:"reportedValue"`
+				DisplayValue  float32 `json:"displayValue"`
+			} `json:"temperature"`
+			TargetTemperature struct {
+				ReportedValue float32 `json:"reportedValue"`
+				DisplayValue  float32 `json:"displayValue"`
+			} `json:"targetHeatTemperature"`
+		} `json:"attributes"`
+	} `json:"nodes"`
+}
+
 func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (map[string]string, map[string]interface{}, error) {
 	// Format the url
 	url := fmt.Sprintf("%s/omnia/nodes/%s", hiveconfig.Url, nodeId)
@@ -50,25 +68,8 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (map[string]st
 		return nil, nil, err
 	}
 
-	// Define the struct to decode the JSON.
-	var result struct {
-		Nodes []struct {
-			Id         string `json:"id"`
-			Name       string `json:"name"`
-			Attributes struct {
-				Temperature struct {
-					ReportedValue float32 `json:"reportedValue"`
-					DisplayValue  float32 `json:"displayValue"`
-				} `json:"temperature"`
-				TargetTemperature struct {
-					ReportedValue float32 `json:"reportedValue"`
-					DisplayValue  float32 `json:"displayValue"`
-				} `json:"targetHeatTemperature"`
-			} `json:"attributes"`
-		} `json:"nodes"`
-	}
-
 	// Unmarshall the JSON.
+	var result HiveJsonStructure
 	json.Unmarshal(body, &result)
 
 	// Define the Influx tags
