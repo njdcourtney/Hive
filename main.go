@@ -25,19 +25,17 @@ func main() {
 		defer ticker.Stop()
 
 		// Loop forever
-		// for range ticker.C {
-
-		// Loop over the devices
-		for id, nodetype := range config.Devices {
-			// Get the data from Hive and send to influx
-			tags, fields, err := hiveGetNode(config.Hive, id, nodetype)
-			if err != nil {
-				log.Println(err)
+		for range ticker.C {
+			// Loop over the devices
+			for id, nodetype := range config.Devices {
+				// Get the data from Hive and send to influx
+				tags, fields, err := hiveGetNode(config.Hive, id, nodetype)
+				if err != nil {
+					log.Println(err)
+				}
+				influxChannel <- influxDataPoint{nodetype, tags, fields}
 			}
-			influxChannel <- influxDataPoint{nodetype, tags, fields, time.Now()}
 		}
-
-		// }
 	}()
 
 	// Connect to the database and write results

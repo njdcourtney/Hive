@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -9,10 +8,9 @@ import (
 )
 
 type influxDataPoint struct {
-	name      string
-	tags      map[string]string
-	fields    map[string]interface{}
-	timestamp time.Time
+	name   string
+	tags   map[string]string
+	fields map[string]interface{}
 }
 
 func influxdb(config Influx, dataChannel chan influxDataPoint) {
@@ -28,7 +26,6 @@ func influxdb(config Influx, dataChannel chan influxDataPoint) {
 	for {
 		// Get the result from the channel
 		datapoint := <-dataChannel
-		fmt.Println(datapoint)
 
 		// Create a new point batch
 		bp, err := client.NewBatchPoints(client.BatchPointsConfig{
@@ -39,7 +36,7 @@ func influxdb(config Influx, dataChannel chan influxDataPoint) {
 			log.Println(err)
 		}
 
-		pt, err := client.NewPoint(datapoint.name, datapoint.tags, datapoint.fields, datapoint.timestamp)
+		pt, err := client.NewPoint(datapoint.name, datapoint.tags, datapoint.fields, time.Now())
 		bp.AddPoint(pt)
 
 		// Write the batch
