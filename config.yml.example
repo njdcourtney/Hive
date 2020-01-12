@@ -1,0 +1,17 @@
+hive:
+  url: https://api.prod.bgchprod.info:443
+  user: [Hive username]
+  pass: [Hive password]
+
+influx:
+  url: "http://cluster:8086"
+  database: hive
+  user: [Influx username]
+  pass: [Influx password]
+
+devices:
+  [Hive Node GUID]: [Hive Node type]
+  [Hive Node GUID]: [Hive Node type]
+
+pollinterval: 60
+
