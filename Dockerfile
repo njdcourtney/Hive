@@ -10,4 +10,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o hive_poller .
 FROM alpine
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/hive_poller .
-CMD ["hive_poller"]
+CMD ["/hive_poller"]
