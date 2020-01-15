@@ -10,7 +10,8 @@ import (
 	"net/http"
 )
 
-func hiveAuth(hiveconfig *Hive) error {
+func hiveAuth(hiveconfig *Hive) {
+
 	// Format the url and the POST JSON.
 	url := fmt.Sprintf("%s/omnia/auth/sessions", hiveconfig.Url)
 	authStr := []byte(fmt.Sprintf("{\"sessions\": [{ \"username\": \"%s\", \"password\": \"%s\", \"caller\": \"WEB\"}]}",
@@ -21,8 +22,8 @@ func hiveAuth(hiveconfig *Hive) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(authStr))
 	body, err := hiveSendRest(req, "")
 	if err != nil {
-		log.Println(err)
-		return err
+		log.Println("Error Authenticating", err)
+		panic("Autnetication Error")
 	}
 
 	// Finally, unmarshall the JSON and return the result.
@@ -35,8 +36,6 @@ func hiveAuth(hiveconfig *Hive) error {
 
 	// Update the config with the session id
 	hiveconfig.SessionId = result.Sessions[0].Id
-	return nil
-
 }
 
 // Map out the JSON structure

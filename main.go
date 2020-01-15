@@ -9,11 +9,8 @@ func main() {
 	// Load in the config file
 	config := loadConfig("config.yml")
 
-	// Log into Hive
-	err := hiveAuth(&config.Hive)
-	if err != nil {
-		panic(err)
-	}
+	// Do initial log into Hive
+	hiveAuth(&config.Hive)
 
 	// Set up the channel for IPC and do the actual polling
 	influxChannel := make(chan influxDataPoint)
@@ -35,6 +32,19 @@ func main() {
 				}
 				influxChannel <- influxDataPoint{nodetype, tags, fields}
 			}
+		}
+	}()
+
+	// Reauthenticate every half and hour.
+	go func() {
+		// Set a ticker
+		authTicker := time.NewTicker(time.Minute * 30)
+		defer authTicker.Stop()
+
+		// Loop forever
+		for range authTicker.C {
+			// Reauthenticate
+			hiveAuth(&config.Hive)
 		}
 	}()
 
