@@ -31,7 +31,7 @@ func main() {
 				// Get the data from Hive and send to influx
 				tags, fields, err := hiveGetNode(config.Hive, id, nodetype)
 				if err != nil {
-					log.Println(err)
+					log.Println(id, err)
 				}
 				influxChannel <- influxDataPoint{nodetype, tags, fields}
 			}

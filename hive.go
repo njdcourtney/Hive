@@ -57,7 +57,14 @@ type HiveJsonStructure struct {
 	} `json:"nodes"`
 }
 
-func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (map[string]string, map[string]interface{}, error) {
+func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (tags map[string]string, fields map[string]interface{}, err error) {
+	// Generic error handler
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("Recovered from panic in hiveGetNode %s", r))
+		}
+	}()
+
 	// Format the url
 	url := fmt.Sprintf("%s/omnia/nodes/%s", hiveconfig.Url, nodeId)
 
@@ -73,7 +80,7 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (map[string]st
 	json.Unmarshal(body, &result)
 
 	// Define the Influx tags
-	tags := map[string]string{
+	tags = map[string]string{
 		"name": result.Nodes[0].Name,
 		"id":   nodeId,
 	}
@@ -81,20 +88,19 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (map[string]st
 	// The data to return depends on the type of device
 	switch nodeType {
 	case "thermostat":
-		fields := map[string]interface{}{
+		fields = map[string]interface{}{
 			"current": result.Nodes[0].Attributes.Temperature.ReportedValue,
 			"target":  result.Nodes[0].Attributes.TargetTemperature.ReportedValue,
 		}
-		return tags, fields, nil
 	case "radiator":
-		fields := map[string]interface{}{
+		fields = map[string]interface{}{
 			"current": result.Nodes[0].Attributes.Temperature.ReportedValue,
 		}
-		return tags, fields, nil
 	default:
-		return nil, nil, errors.New(fmt.Sprintf("Unknown device type %s", nodeType))
+		err = errors.New(fmt.Sprintf("Unknown device type %s", nodeType))
 	}
 
+	return tags, fields, err
 }
 
 // Shared function for sending the REST call
