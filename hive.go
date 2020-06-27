@@ -56,6 +56,7 @@ func hiveAuth(hiveconfig Hive) {
 
 	// Update the session varaible with the new session id
 	hiveSession = result.Sessions[0].Id
+
 }
 
 // Map out the JSON structure in the returned data
