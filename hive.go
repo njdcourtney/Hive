@@ -21,7 +21,7 @@ func hiveLogin(hiveconfig Hive) {
 
 	go func() {
 		// Set a ticker
-		authTicker := time.NewTicker(time.Second * 20)
+		authTicker := time.NewTicker(time.Minute * 30)
 		defer authTicker.Stop()
 
 		// Reauthenticate every ticker interval
