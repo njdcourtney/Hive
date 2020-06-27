@@ -8,9 +8,30 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
-func hiveAuth(hiveconfig *Hive) {
+var hiveSession string = ""
+
+// Authenticate to Hive now and every half an hour
+func hiveLogin(hiveconfig Hive) {
+
+	// Authenticate immediately
+	hiveAuth(hiveconfig)
+
+	go func() {
+		// Set a ticker
+		authTicker := time.NewTicker(time.Second * 20)
+		defer authTicker.Stop()
+
+		// Reauthenticate every ticker interval
+		for range authTicker.C {
+			hiveAuth(hiveconfig)
+		}
+	}()
+}
+
+func hiveAuth(hiveconfig Hive) {
 
 	// Format the url and the POST JSON.
 	url := fmt.Sprintf("%s/omnia/auth/sessions", hiveconfig.Url)
@@ -20,10 +41,9 @@ func hiveAuth(hiveconfig *Hive) {
 
 	// Get the response from Hive
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(authStr))
-	body, err := hiveSendRest(req, "")
+	body, err := hiveSendRest(req)
 	if err != nil {
-		log.Println("Error Authenticating", err)
-		panic("Autnetication Error")
+		log.Fatal("Error Authenticating", err)
 	}
 
 	// Finally, unmarshall the JSON and return the result.
@@ -34,11 +54,11 @@ func hiveAuth(hiveconfig *Hive) {
 	}
 	json.Unmarshal(body, &result)
 
-	// Update the config with the session id
-	hiveconfig.SessionId = result.Sessions[0].Id
+	// Update the session varaible with the new session id
+	hiveSession = result.Sessions[0].Id
 }
 
-// Map out the JSON structure
+// Map out the JSON structure in the returned data
 type HiveJsonStructure struct {
 	Nodes []struct {
 		Id         string `json:"id"`
@@ -57,10 +77,11 @@ type HiveJsonStructure struct {
 }
 
 func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (tags map[string]string, fields map[string]interface{}, err error) {
-	// Generic error handler
+	// Generic error handler (https://blog.golang.org/defer-panic-and-recover)
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("Recovered from panic in hiveGetNode %s", r))
+			return
 		}
 	}()
 
@@ -69,7 +90,7 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (tags map[stri
 
 	// Get the response from Hive
 	req, err := http.NewRequest("GET", url, nil)
-	body, err := hiveSendRest(req, hiveconfig.SessionId)
+	body, err := hiveSendRest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,7 +104,6 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (tags map[stri
 		"name": result.Nodes[0].Name,
 		"id":   nodeId,
 	}
-
 	// The data to return depends on the type of device
 	switch nodeType {
 	case "thermostat":
@@ -97,20 +117,21 @@ func hiveGetNode(hiveconfig Hive, nodeId string, nodeType string) (tags map[stri
 		}
 	default:
 		err = errors.New(fmt.Sprintf("Unknown device type %s", nodeType))
+		return nil, nil, err
 	}
 
 	return tags, fields, err
 }
 
 // Shared function for sending the REST call
-func hiveSendRest(req *http.Request, session string) ([]byte, error) {
+func hiveSendRest(req *http.Request) ([]byte, error) {
 	// Add the required headers
 	req.Header.Set("Content-Type", "application/vnd.alertme.zoo-6.1+json")
 	req.Header.Set("Accept", "application/vnd.alertme.zoo-6.1+json")
 	req.Header.Set("X-Omnia-Client", "Hive Web Dashboard")
 	// Add the sess header if already authenticated
-	if session != "" {
-		req.Header.Set("X-Omnia-Access-Token", session)
+	if hiveSession != "" {
+		req.Header.Set("X-Omnia-Access-Token", hiveSession)
 	}
 
 	// Send the actual REST request

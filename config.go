@@ -7,10 +7,10 @@ import (
 )
 
 type Hive struct {
-	Url       string
-	User      string
-	Pass      string
-	SessionId string
+	Url    string
+	User   string
+	Pass   string
+	Reauth int
 }
 
 type Influx struct {
