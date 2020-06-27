@@ -39,7 +39,7 @@ func influxDataPoint(config Influx, nodetype string, tags map[string]string, fie
 	bp.AddPoint(pt)
 
 	// Write the batch
-	// err = influxdbConnection.Write(bp)
+	err = influxdbConnection.Write(bp)
 	if err != nil {
 		log.Println(err)
 		return
