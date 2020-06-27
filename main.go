@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 )
@@ -26,7 +25,6 @@ func main() {
 		// Loop over the devices
 		for id, nodetype := range config.Devices {
 			// Get the data from Hive and send to influx
-			fmt.Println("Pre fetch")
 			tags, fields, err := hiveGetNode(config.Hive, id, nodetype)
 			if err != nil {
 				log.Println(id, err)
